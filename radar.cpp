@@ -1,50 +1,65 @@
-#include <Servo.h>
+// Program code for RADAR System
 
-// Pin definitions
-const int trigPin = 9;
-const int echoPin = 10;
-const int servoPin = 11;
 
-Servo myServo; 
+#include <Servo.h>   // Includes the Servo library
+
+// Defines Trig and Echo pins of the Ultrasonic Sensor
+const int trigPin = 10;
+const int echoPin = 11;
+
+// Variables for the duration and the distance
+long duration;
+int distance;
+
+Servo myServo; // Creates a servo object for controlling the servo motor
 
 void setup() {
-  Serial.begin(9600); 
-  pinMode(trigPin, OUTPUT); 
-  pinMode(echoPin, INPUT); 
-  myServo.attach(servoPin); 
+  pinMode(trigPin, OUTPUT);   // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT);    // Sets the echoPin as an Input
+  Serial.begin(9600);         // Serial communication for debugging
+  myServo.attach(12);         // Connects the servo motor to pin 12
 }
 
 void loop() {
-  // Sweep from 15° to 180°
-  for (int angle = 15; angle <= 180; angle++) {
-    myServo.write(angle);
-    delay(30);
-    int distance = calculateDistance();
-    Serial.print(angle);
-    Serial.print(",");
-    Serial.println(distance);
+  // Sweep servo from 15° to 190° (forward direction)
+  for (int i = 15; i <= 190; i += 10) {   // step by 2 degrees
+    scanAndMeasure(i);
   }
 
-  // Sweep back from 180° to 15°
-  for (int angle = 180; angle >= 15; angle--) {
-    myServo.write(angle);
-    delay(30);
-    int distance = calculateDistance();
-    Serial.print(angle);
-    Serial.print(",");
-    Serial.println(distance);
+  // Sweep servo from 190° back to 15° (reverse direction)
+  for (int i = 190; i >= 15; i -= 10) {   // step by 2 degrees
+    scanAndMeasure(i);
   }
 }
 
-// Function to calculate distance using ultrasonic sensor
+// Function to rotate servo, measure distance and print data
+void scanAndMeasure(int angle) {
+  myServo.write(angle);        // Rotate servo to angle
+  delay(35);                   // Faster sweep (was 30 before)
+  distance = calculateDistance();   // Measure distance
+
+  // Send data to Serial Monitor (Processing IDE compatible format)
+  Serial.print(angle);
+  Serial.print(",");
+  Serial.print(distance);
+  Serial.print(".");
+}
+
+// Function for calculating the distance measured by the Ultrasonic sensor
 int calculateDistance() {
-  digitalWrite(trigPin, LOW); 
+  // Clear trigPin
+  digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH); 
+
+  // Trigger the sensor with a 10us HIGH pulse
+  digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
-  long duration = pulseIn(echoPin, HIGH);
-  int distance = duration * 0.034 / 2; // Convert to cm
+  // Read the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+
+  // Calculate distance in cm (speed of sound = 0.034 cm/us)
+  distance = duration * 0.034 / 2;
   return distance;
 }
